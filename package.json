@@ -1,0 +1,20 @@
+{
+  "name": "china-taiwan-monitor",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Daily China-Taiwan intelligence system: dashboard, newsletter, and X bot.",
+  "packageManager": "pnpm@11.1.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @ctm/dashboard dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "dashboard": "pnpm --filter @ctm/dashboard"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

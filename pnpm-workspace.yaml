@@ -1,0 +1,10 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Postinstall scripts that need to run. Both are legitimate native-binary
+# fetchers — sharp ships native image processing for Next.js, unrs-resolver
+# is the Rust resolver used by eslint-plugin-import.
+allowBuilds:
+  sharp: true
+  unrs-resolver: true
