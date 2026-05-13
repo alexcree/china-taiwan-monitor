@@ -95,3 +95,31 @@ a {
 .headline-link:hover {
   color: var(--color-accent);
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+ * Market ticker — continuous left-scrolling marquee.
+ * The inner track contains TWO copies of the quote set rendered
+ * back-to-back. Translating by -50% brings the second copy into the
+ * position the first started in, so the loop is seamless. Pause on hover
+ * so a visitor can read; honor reduced-motion preference.
+ * ───────────────────────────────────────────────────────────────────── */
+@keyframes ticker-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+.ticker-track {
+  animation: ticker-scroll 90s linear infinite;
+  will-change: transform;
+}
+.ticker-viewport:hover .ticker-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none;
+  }
+}
