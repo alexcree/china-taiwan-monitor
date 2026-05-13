@@ -8,7 +8,28 @@
  * .env or .env.local in the repo root).
  */
 
-import "dotenv/config";
+import { config as loadDotenv } from "dotenv";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// Walk up from this file's location looking for .env in the repo root.
+// pnpm --filter runs scripts with cwd = package dir, not repo root, so
+// dotenv/config alone wouldn't find it.
+(function loadEnv() {
+  let dir = dirname(fileURLToPath(import.meta.url));
+  for (let i = 0; i < 10; i++) {
+    const p = join(dir, ".env");
+    if (existsSync(p)) {
+      loadDotenv({ path: p });
+      return;
+    }
+    const parent = dirname(dir);
+    if (parent === dir) return;
+    dir = parent;
+  }
+})();
+
 import { SEED_SOURCES, type Source } from "@ctm/sources";
 import { getServiceClient } from "../index.js";
 

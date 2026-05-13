@@ -9,7 +9,28 @@
  * a small VPS in Phase 3 when scrapers and per-tier cadence are introduced.
  */
 
-import "dotenv/config";
+import { config as loadDotenv } from "dotenv";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// Walk up from this file's location looking for .env in the repo root.
+// pnpm --filter runs scripts with cwd = package dir; in GitHub Actions cwd
+// is already the repo root, so this works in both contexts.
+(function loadEnv() {
+  let dir = dirname(fileURLToPath(import.meta.url));
+  for (let i = 0; i < 10; i++) {
+    const p = join(dir, ".env");
+    if (existsSync(p)) {
+      loadDotenv({ path: p });
+      return;
+    }
+    const parent = dirname(dir);
+    if (parent === dir) return;
+    dir = parent;
+  }
+})();
+
 import { getServiceClient, listEnabledSources, type SourceRow } from "@ctm/db";
 import { fetchFeed } from "./rss.js";
 import { ingestItems, type IngestResult } from "./ingest.js";
