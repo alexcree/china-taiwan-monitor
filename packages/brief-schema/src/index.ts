@@ -41,8 +41,10 @@ export const EnglishSourceSchema = z.object({
   summary_short: z.string().min(1),
   summary_extended: z.string().min(1),
   url: z.string().url(),
-  /** Article publish time, ISO 8601. Used to render relative timestamps. */
+  /** Article publish time, ISO 8601. */
   published_at: z.string().datetime().optional(),
+  /** Article is behind a paywall (full content). */
+  paywall: z.boolean().optional(),
 });
 export type EnglishSource = z.infer<typeof EnglishSourceSchema>;
 
@@ -52,8 +54,10 @@ export const ChineseSourceSchema = z.object({
   summary_short_en: z.string().min(1),
   summary_extended_en: z.string().min(1),
   url: z.string().url(),
-  /** Article publish time, ISO 8601. Used to render relative timestamps. */
+  /** Article publish time, ISO 8601. */
   published_at: z.string().datetime().optional(),
+  /** Article is behind a paywall (full content). */
+  paywall: z.boolean().optional(),
 });
 export type ChineseSource = z.infer<typeof ChineseSourceSchema>;
 

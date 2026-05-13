@@ -1,19 +1,56 @@
 import type { PublicBrief, Sector } from "@ctm/brief-schema";
 import { SECTOR_LABELS } from "@ctm/brief-schema";
-import { domainOf, relativeTime } from "@ctm/shared";
+import { domainOf, formatArticleTime, isPaywalled } from "@ctm/shared";
 import Link from "next/link";
 
 type SectorData = NonNullable<PublicBrief["sections"][Sector]>;
 
+function PaywallBadge() {
+  return (
+    <span
+      title="Behind a paywall"
+      className="inline-flex items-center justify-center font-mono text-[9px] font-bold tracking-wider px-1 py-px border border-[color:var(--color-accent)] text-[color:var(--color-accent)] leading-none"
+    >
+      $
+    </span>
+  );
+}
+
+function SourceByline({
+  url,
+  lang,
+  publishedAt,
+  paywall,
+}: {
+  url: string;
+  lang: "EN" | "ZH";
+  publishedAt?: string;
+  paywall?: boolean;
+}) {
+  const paywalled = isPaywalled(url, paywall);
+  const langColor =
+    lang === "EN" ? "text-[color:var(--color-en)]" : "text-[color:var(--color-zh)]";
+  return (
+    <div className="mt-0.5 flex items-center gap-1.5 font-mono text-[10px] text-[color:var(--color-fg-dim)]">
+      <span className={`font-bold tracking-wider ${langColor}`}>{lang}</span>
+      <span>·</span>
+      <span className="truncate">{domainOf(url)}</span>
+      {paywalled && <PaywallBadge />}
+      {publishedAt && (
+        <span className="ml-auto tabular-nums whitespace-nowrap">
+          {formatArticleTime(publishedAt)}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function SectorCard({
   sector,
   data,
-  now,
 }: {
   sector: Sector;
   data: SectorData;
-  /** ISO datetime used as "now" for relative-time rendering. */
-  now: string;
 }) {
   const totalSources =
     data.english_sources.length + data.chinese_sources.length;
@@ -40,20 +77,12 @@ export function SectorCard({
             >
               {src.headline}
             </a>
-            <div className="mt-0.5 flex items-center gap-1.5 font-mono text-[10px] text-[color:var(--color-fg-dim)]">
-              <span className="text-[color:var(--color-en)] font-bold tracking-wider">
-                EN
-              </span>
-              <span>·</span>
-              <span className="truncate">{domainOf(src.url)}</span>
-              {src.published_at && (
-                <>
-                  <span className="ml-auto tabular-nums">
-                    {relativeTime(src.published_at, now)}
-                  </span>
-                </>
-              )}
-            </div>
+            <SourceByline
+              url={src.url}
+              lang="EN"
+              publishedAt={src.published_at}
+              paywall={src.paywall}
+            />
           </li>
         ))}
         {data.chinese_sources.map((src, i) => (
@@ -71,18 +100,12 @@ export function SectorCard({
                 ↳ {src.headline_en}
               </span>
             </a>
-            <div className="mt-0.5 flex items-center gap-1.5 font-mono text-[10px] text-[color:var(--color-fg-dim)]">
-              <span className="text-[color:var(--color-zh)] font-bold tracking-wider">
-                ZH
-              </span>
-              <span>·</span>
-              <span className="truncate">{domainOf(src.url)}</span>
-              {src.published_at && (
-                <span className="ml-auto tabular-nums">
-                  {relativeTime(src.published_at, now)}
-                </span>
-              )}
-            </div>
+            <SourceByline
+              url={src.url}
+              lang="ZH"
+              publishedAt={src.published_at}
+              paywall={src.paywall}
+            />
           </li>
         ))}
       </ul>
