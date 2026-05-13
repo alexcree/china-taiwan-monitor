@@ -1,64 +1,61 @@
-import { SECTORS, type Sector } from "@ctm/brief-schema";
-import { getLatestPublicBrief } from "@/lib/brief";
+import { getHome } from "@/lib/home";
 import { getLatestMarkets } from "@/lib/markets";
 import { MarketTicker } from "@/components/market-ticker";
-import { SectorCard } from "@/components/brief/sector-card";
+import {
+  SourceCategoryCard,
+  CATEGORY_ORDER,
+} from "@/components/source-category-card";
 import { SectionLabel } from "@/components/brief/section-label";
-import { SourceNotes } from "@/components/brief/source-notes";
 import { SubscribeInline } from "@/components/subscribe-inline";
 
-// Bias the sector order so business/finance/tech sit prominently up top.
-const SECTOR_ORDER: Sector[] = [
-  "economy",
-  "tech",
-  "consumer",
-  "property",
-  "defense",
-  "politics",
-  "diplomacy",
-  "cyber",
-  "influence",
-];
+// Match /feed cadence — close to the 15-min ingestion pass.
+export const revalidate = 60;
 
 export default async function HomePage() {
-  const [publicBrief, markets] = await Promise.all([
-    getLatestPublicBrief(),
+  const [home, markets] = await Promise.all([
+    getHome(),
     getLatestMarkets(),
   ]);
 
-  const sectorsWithContent = SECTOR_ORDER.filter((s) =>
-    Boolean(publicBrief.sections[s]),
-  );
-  for (const s of SECTORS) {
-    if (publicBrief.sections[s] && !sectorsWithContent.includes(s)) {
-      sectorsWithContent.push(s);
-    }
-  }
+  const orderedCats = [
+    ...CATEGORY_ORDER.filter((c) => (home.buckets.get(c)?.length ?? 0) > 0),
+    ...Array.from(home.buckets.keys()).filter(
+      (c) => !CATEGORY_ORDER.includes(c) && (home.buckets.get(c)?.length ?? 0) > 0,
+    ),
+  ];
 
   return (
     <>
       <MarketTicker quotes={markets.quotes} isSeed={markets.is_seed} />
 
       <div className="mx-auto max-w-7xl px-5 pt-5 pb-12">
-        <section>
-          <SectionLabel
-            subtitle={`${sectorsWithContent.length} sectors · EN + ZH sources · ${publicBrief.brief_date}`}
-          >
-            Headlines
-          </SectionLabel>
-
-          <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-5">
-            {sectorsWithContent.map((sector) => {
-              const data = publicBrief.sections[sector];
-              if (!data) return null;
-              return <SectorCard key={sector} sector={sector} data={data} />;
-            })}
+        {home.source === "seed" && (
+          <div className="mb-5 border-l-4 border-[color:var(--color-accent)] bg-[color:var(--color-accent-soft)] px-4 py-3 text-[13px] leading-snug text-[color:var(--color-fg)]">
+            <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-[color:var(--color-accent)] font-bold mr-2">
+              Seed mode
+            </span>
+            Supabase is not configured. Once the ingestion worker has made its
+            first pass, this page will render live articles grouped by source
+            category.
           </div>
-        </section>
+        )}
+
+        <SectionLabel
+          subtitle={`${home.totalArticles} headlines · last 36h · ${orderedCats.length} desks`}
+        >
+          Headlines
+        </SectionLabel>
+
+        <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-5">
+          {orderedCats.map((cat) => {
+            const items = home.buckets.get(cat) ?? [];
+            return (
+              <SourceCategoryCard key={cat} category={cat} articles={items} />
+            );
+          })}
+        </div>
 
         <SubscribeInline />
-
-        <SourceNotes text={publicBrief.source_notes} />
       </div>
     </>
   );

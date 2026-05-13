@@ -71,10 +71,13 @@ export interface ArticleInsert {
 
 /**
  * ArticleRow joined with the source display fields the dashboard needs.
- * Produced by selecting `*, source:sources(slug, display_name, country, lang)`.
+ * Produced by selecting `*, source:sources(slug, display_name, country, lang, paywall, category)`.
  */
 export interface ArticleWithSource extends ArticleRow {
   source:
-    | Pick<SourceRow, "slug" | "display_name" | "country" | "lang" | "paywall">
+    | Pick<
+        SourceRow,
+        "slug" | "display_name" | "country" | "lang" | "paywall" | "category"
+      >
     | null;
 }

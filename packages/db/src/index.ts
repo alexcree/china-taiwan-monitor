@@ -74,7 +74,7 @@ export function getServiceClient(): SupabaseClient {
 // Query helpers used by both dashboard and workers.
 // ────────────────────────────────────────────────────────────────────────────
 
-const SOURCE_FIELDS = "slug, display_name, country, lang, paywall";
+const SOURCE_FIELDS = "slug, display_name, country, lang, paywall, category";
 
 const ARTICLE_FIELDS = `
   id, source_id, url, url_canonical, lang,
@@ -98,6 +98,49 @@ export async function listLatestArticles(
 
   if (error) throw error;
   return (data ?? []) as unknown as ArticleWithSource[];
+}
+
+/**
+ * Pull a window of recent articles and group them by source.category, with
+ * a per-category cap so high-volume wires don't crowd out smaller desks.
+ * Used by the home page to render an aggregator-style grouped layout.
+ */
+export async function listArticlesByCategory(
+  client: SupabaseClient,
+  opts: {
+    sinceHours?: number;
+    totalLimit?: number;
+    perCategoryLimit?: number;
+  } = {},
+): Promise<Map<string, ArticleWithSource[]>> {
+  const sinceHours = opts.sinceHours ?? 36;
+  const totalLimit = opts.totalLimit ?? 600;
+  const perCategoryLimit = opts.perCategoryLimit ?? 12;
+
+  const sinceIso = new Date(
+    Date.now() - sinceHours * 3600 * 1000,
+  ).toISOString();
+
+  const { data, error } = await client
+    .from("articles")
+    .select(ARTICLE_FIELDS)
+    .gte("published_at", sinceIso)
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("fetched_at", { ascending: false })
+    .limit(totalLimit);
+
+  if (error) throw error;
+
+  const buckets = new Map<string, ArticleWithSource[]>();
+  for (const a of (data ?? []) as unknown as ArticleWithSource[]) {
+    const cat = a.source?.category ?? "general";
+    const bucket = buckets.get(cat) ?? [];
+    if (bucket.length < perCategoryLimit) {
+      bucket.push(a);
+      buckets.set(cat, bucket);
+    }
+  }
+  return buckets;
 }
 
 /** Enabled sources, optionally filtered by tier. Used by the worker. */

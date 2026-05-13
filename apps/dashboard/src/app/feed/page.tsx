@@ -63,11 +63,11 @@ export default async function FeedPage() {
                 rel="noopener noreferrer"
                 className="headline-link block"
               >
-                <span className="block text-[14px] leading-snug">
+                <span className="block text-[15px] leading-snug font-semibold text-[color:var(--color-fg)]">
                   {a.title_original}
                 </span>
                 {isZh && a.title_en && (
-                  <span className="block mt-0.5 text-[12px] leading-snug text-[color:var(--color-fg-muted)] italic">
+                  <span className="block mt-0.5 text-[12px] leading-snug text-[color:var(--color-fg-muted)] italic font-normal">
                     ↳ {a.title_en}
                   </span>
                 )}
