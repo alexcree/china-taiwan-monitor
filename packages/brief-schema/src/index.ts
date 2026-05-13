@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export * from "./markets.js";
+
 export const SECTORS = [
   "defense",
   "politics",
@@ -39,6 +41,8 @@ export const EnglishSourceSchema = z.object({
   summary_short: z.string().min(1),
   summary_extended: z.string().min(1),
   url: z.string().url(),
+  /** Article publish time, ISO 8601. Used to render relative timestamps. */
+  published_at: z.string().datetime().optional(),
 });
 export type EnglishSource = z.infer<typeof EnglishSourceSchema>;
 
@@ -48,6 +52,8 @@ export const ChineseSourceSchema = z.object({
   summary_short_en: z.string().min(1),
   summary_extended_en: z.string().min(1),
   url: z.string().url(),
+  /** Article publish time, ISO 8601. Used to render relative timestamps. */
+  published_at: z.string().datetime().optional(),
 });
 export type ChineseSource = z.infer<typeof ChineseSourceSchema>;
 
@@ -131,7 +137,7 @@ export type PublicBrief = Omit<
   >;
 };
 
-const TOP_SOURCES_PER_SECTOR = 5;
+const TOP_SOURCES_PER_SECTOR = 8;
 
 export function toPublicBrief(b: Brief): PublicBrief {
   const sections: PublicBrief["sections"] = {};
