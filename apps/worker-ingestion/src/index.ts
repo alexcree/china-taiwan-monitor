@@ -34,6 +34,7 @@ import { fileURLToPath } from "node:url";
 import { getServiceClient, listEnabledSources, type SourceRow } from "@ctm/db";
 import { fetchFeed } from "./rss.js";
 import { ingestItems, type IngestResult } from "./ingest.js";
+import { refreshMarketQuotes } from "./markets.js";
 
 const CONCURRENCY = 6;
 const PER_SOURCE_TIMEOUT_MS = 20_000;
@@ -149,6 +150,14 @@ export async function runIngestionPass(): Promise<void> {
     `[ingest] done in ${elapsed}s · ok=${okSources}/${sources.length} ` +
       `inserted=${totalInserted} dedup_skipped=${totalDedup} ` +
       `relevance_skipped=${totalRelevance} failed=${totalFailed}`,
+  );
+
+  // Market quotes: refresh after RSS so a slow RSS pass doesn't delay them.
+  const t1 = Date.now();
+  const m = await refreshMarketQuotes(supabase);
+  const elapsedM = ((Date.now() - t1) / 1000).toFixed(1);
+  console.log(
+    `[markets] done in ${elapsedM}s · fetched=${m.fetched} upserted=${m.upserted} failed=${m.failed}`,
   );
 }
 

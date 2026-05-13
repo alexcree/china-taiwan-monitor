@@ -56,6 +56,18 @@ export interface ArticleRow {
   created_at: string;
 }
 
+export interface MarketQuoteRow {
+  symbol: string;
+  label: string;
+  region: "cn" | "hk" | "tw" | "us" | "global";
+  category: "equity" | "fx" | "commodity" | "rate" | "etf";
+  last: number;
+  change_pct: number;
+  note: string | null;
+  as_of: string;
+  fetched_at: string;
+}
+
 export interface ArticleInsert {
   source_id?: string | null;
   url: string;

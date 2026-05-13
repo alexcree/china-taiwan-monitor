@@ -1,5 +1,9 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { ArticleWithSource, SourceRow } from "./types.js";
+import type {
+  ArticleWithSource,
+  MarketQuoteRow,
+  SourceRow,
+} from "./types.js";
 
 export * from "./types.js";
 
@@ -187,6 +191,18 @@ export async function listArticlesByCategory(
     }
   }
   return buckets;
+}
+
+/** Current snapshot of every tracked market quote. Returns null if empty. */
+export async function getMarketSnapshot(
+  client: SupabaseClient,
+): Promise<MarketQuoteRow[] | null> {
+  const { data, error } = await client
+    .from("market_quotes")
+    .select("symbol, label, region, category, last, change_pct, note, as_of, fetched_at");
+  if (error) throw error;
+  if (!data || data.length === 0) return null;
+  return data as MarketQuoteRow[];
 }
 
 /** Enabled sources, optionally filtered by tier. Used by the worker. */

@@ -30,7 +30,11 @@ export default async function HomePage() {
 
   return (
     <>
-      <MarketTicker quotes={markets.quotes} isSeed={markets.is_seed} />
+      <MarketTicker
+        quotes={markets.quotes}
+        isSeed={markets.is_seed}
+        asOf={markets.as_of}
+      />
 
       {lead && <TopLead lead={lead} secondaries={secondaries} />}
 

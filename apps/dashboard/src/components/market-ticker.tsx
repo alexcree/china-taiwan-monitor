@@ -1,5 +1,6 @@
 import type { MarketQuote, MarketRegion } from "@ctm/brief-schema";
 import { formatPrice, formatChangePct } from "@ctm/shared";
+import { LocalTime } from "@/components/local-time";
 import { cn } from "@/lib/cn";
 
 const REGION_LABEL: Record<MarketRegion, string> = {
@@ -54,9 +55,11 @@ function QuotePill({ q }: { q: MarketQuote }) {
 export function MarketTicker({
   quotes,
   isSeed,
+  asOf,
 }: {
   quotes: MarketQuote[];
   isSeed: boolean;
+  asOf?: string;
 }) {
   return (
     <section
@@ -72,11 +75,21 @@ export function MarketTicker({
             <QuotePill key={q.symbol} q={q} />
           ))}
         </div>
-        {isSeed && (
-          <div className="shrink-0 hidden md:flex items-center px-2 py-1.5 font-mono text-[10px] tracking-wider text-[color:var(--color-fg-dim)] border-l border-[color:var(--color-border)]">
-            SEED · live feed wires in Phase 2
-          </div>
-        )}
+        <div className="shrink-0 hidden md:flex items-center px-2 py-1.5 font-mono text-[10px] tracking-wider text-[color:var(--color-fg-dim)] border-l border-[color:var(--color-border)] gap-1.5">
+          {isSeed ? (
+            <span>SEED · awaiting first refresh</span>
+          ) : (
+            <>
+              <span>LIVE</span>
+              {asOf && (
+                <>
+                  <span>·</span>
+                  <LocalTime iso={asOf} />
+                </>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </section>
   );
