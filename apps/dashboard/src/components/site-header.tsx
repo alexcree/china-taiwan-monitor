@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const NAV = [
@@ -21,11 +22,16 @@ export function SiteHeader() {
   return (
     <header className="bg-[color:var(--color-surface)] rule-bottom">
       {/* Masthead */}
-      <div className="mx-auto max-w-7xl px-5 py-4 flex items-baseline gap-4 flex-wrap">
-        <Link href="/" className="flex items-baseline gap-3">
-          <span className="font-mono text-[color:var(--color-accent)] text-sm font-bold tracking-[0.18em]">
-            CTM
-          </span>
+      <div className="mx-auto max-w-7xl px-5 py-4 flex items-center gap-4 flex-wrap">
+        <Link href="/" className="flex items-center gap-3">
+          <Image
+            src="/logo.png"
+            alt="China–Taiwan Monitor seal"
+            width={44}
+            height={44}
+            priority
+            className="block"
+          />
           <span className="text-2xl font-bold tracking-tight text-[color:var(--color-fg)]">
             China–Taiwan Monitor
           </span>
