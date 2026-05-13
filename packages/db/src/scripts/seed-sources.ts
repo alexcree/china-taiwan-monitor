@@ -54,6 +54,7 @@ function toRow(s: Source) {
 async function main() {
   const supabase = getServiceClient();
   const rows = SEED_SOURCES.map(toRow);
+  const slugs = new Set(rows.map((r) => r.slug));
 
   console.log(`[seed-sources] upserting ${rows.length} sources...`);
   const { error, count } = await supabase
@@ -64,8 +65,24 @@ async function main() {
     console.error("[seed-sources] failed:", error.message);
     process.exit(1);
   }
-
   console.log(`[seed-sources] done. rows touched: ${count ?? rows.length}`);
+
+  // Disable any DB rows whose slug is no longer in SEED_SOURCES — e.g., sources
+  // that have been renamed or retired. We disable rather than delete so the
+  // foreign-key reference from `articles.source_id` stays intact.
+  const { data: dbRows } = await supabase
+    .from("sources")
+    .select("slug")
+    .eq("enabled", true);
+  const orphans = (dbRows ?? [])
+    .map((r) => r.slug as string)
+    .filter((s) => !slugs.has(s));
+  if (orphans.length > 0) {
+    console.log(
+      `[seed-sources] disabling ${orphans.length} orphan slug(s): ${orphans.join(", ")}`,
+    );
+    await supabase.from("sources").update({ enabled: false }).in("slug", orphans);
+  }
 
   const { count: enabledCount } = await supabase
     .from("sources")

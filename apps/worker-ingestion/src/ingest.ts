@@ -43,11 +43,12 @@ export async function ingestItems(
   let skipped = 0;
   let failed = 0;
 
-  // upsert ignoreDuplicates is the cleanest path: no-op when the URL already
-  // exists, no error returned. Reporting requires a follow-up count.
-  const { error } = await supabase
+  // upsert with ignoreDuplicates + select returns ONLY the rows actually
+  // inserted (existing URLs are silently skipped), giving an accurate count.
+  const { data, error } = await supabase
     .from("articles")
-    .upsert(rows, { onConflict: "url", ignoreDuplicates: true });
+    .upsert(rows, { onConflict: "url", ignoreDuplicates: true })
+    .select("id");
 
   if (error) {
     // Fall back to per-row inserts to isolate the bad item.
@@ -58,7 +59,6 @@ export async function ingestItems(
       if (!rowError) {
         inserted++;
       } else if (rowError.code === "23505") {
-        // unique violation = duplicate URL
         skipped++;
       } else {
         failed++;
@@ -68,9 +68,8 @@ export async function ingestItems(
       }
     }
   } else {
-    // Batch upsert succeeded; we can't easily distinguish inserted vs skipped
-    // without a returning clause, so approximate.
-    inserted = rows.length;
+    inserted = data?.length ?? 0;
+    skipped = rows.length - inserted;
   }
 
   return { inserted, skipped_duplicate: skipped, failed };
