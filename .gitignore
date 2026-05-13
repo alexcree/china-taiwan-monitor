@@ -30,6 +30,13 @@ yarn-error.log*
 # Claude Code local settings
 .claude/
 
+# Stray binaries dropped at the repo root by AI/chat tools etc.
+/ChatGPT*.png
+/ChatGPT*.jpg
+/ChatGPT*.jpeg
+/Screenshot*.png
+/Screen Shot*.png
+
 # vercel
 .vercel/
 
