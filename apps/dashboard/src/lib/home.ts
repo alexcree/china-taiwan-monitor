@@ -2,6 +2,7 @@ import {
   getAnonClient,
   isDbConfigured,
   listArticlesByCategory,
+  listTopLeads,
   type ArticleWithSource,
 } from "@ctm/db";
 import { SEED_BRIEF } from "@ctm/brief-schema/seed";
@@ -10,6 +11,8 @@ import type { Sector } from "@ctm/brief-schema";
 export interface HomeState {
   /** Map of source-category slug → ordered articles. */
   buckets: Map<string, ArticleWithSource[]>;
+  /** Drudge-style banner: lead + secondaries, picked from tier-1 sources. */
+  leads: ArticleWithSource[];
   source: "live" | "seed";
   totalArticles: number;
 }
@@ -37,14 +40,17 @@ export async function getHome(): Promise<HomeState> {
     const client = getAnonClient();
     if (client) {
       try {
-        const buckets = await listArticlesByCategory(client, {
-          sinceHours: 36,
-          totalLimit: 600,
-          perCategoryLimit: 12,
-        });
+        const [buckets, leads] = await Promise.all([
+          listArticlesByCategory(client, {
+            sinceHours: 24,
+            totalLimit: 600,
+            perCategoryLimit: 12,
+          }),
+          listTopLeads(client, { sinceHours: 24, limit: 4 }),
+        ]);
         let total = 0;
         for (const v of buckets.values()) total += v.length;
-        return { buckets, source: "live", totalArticles: total };
+        return { buckets, leads, source: "live", totalArticles: total };
       } catch (err) {
         console.warn(
           "[home] live read failed, falling back to seed:",
@@ -99,7 +105,22 @@ function seedHome(): HomeState {
     );
   }
 
-  return { buckets, source: "seed", totalArticles: total };
+  // Pick a "lead pool" from the freshest seed articles — same shape as the
+  // live path so the page renders identically. Dedupe by URL.
+  const allSeed = Array.from(buckets.values()).flat();
+  allSeed.sort((a, b) =>
+    (b.published_at ?? "").localeCompare(a.published_at ?? ""),
+  );
+  const seenUrls = new Set<string>();
+  const leads: ArticleWithSource[] = [];
+  for (const a of allSeed) {
+    if (seenUrls.has(a.url)) continue;
+    seenUrls.add(a.url);
+    leads.push(a);
+    if (leads.length >= 4) break;
+  }
+
+  return { buckets, leads, source: "seed", totalArticles: total };
 }
 
 function pushSeed(

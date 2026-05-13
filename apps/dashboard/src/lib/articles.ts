@@ -29,12 +29,19 @@ const SECTORS_IN_ORDER: Sector[] = [
  * back to a flattened view over the seed brief otherwise so the route still
  * renders during local dev or before Phase 2 is wired up.
  */
-export async function getFeed(limit = 60): Promise<FeedState> {
+export async function getFeed(
+  opts: { limit?: number; sinceHours?: number } = {},
+): Promise<FeedState> {
+  const limit = opts.limit ?? 200;
+  const sinceHours = opts.sinceHours ?? 24;
   if (isDbConfigured()) {
     const client = getAnonClient();
     if (client) {
       try {
-        const articles = await listLatestArticles(client, limit);
+        const articles = await listLatestArticles(client, {
+          limit,
+          sinceHours,
+        });
         return { articles, source: "live" };
       } catch (err) {
         console.warn(

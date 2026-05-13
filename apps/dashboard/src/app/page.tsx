@@ -7,6 +7,7 @@ import {
 } from "@/components/source-category-card";
 import { SectionLabel } from "@/components/brief/section-label";
 import { SubscribeInline } from "@/components/subscribe-inline";
+import { TopLead } from "@/components/top-lead";
 
 // Match /feed cadence — close to the 15-min ingestion pass.
 export const revalidate = 60;
@@ -24,9 +25,14 @@ export default async function HomePage() {
     ),
   ];
 
+  const lead = home.leads[0];
+  const secondaries = home.leads.slice(1, 4);
+
   return (
     <>
       <MarketTicker quotes={markets.quotes} isSeed={markets.is_seed} />
+
+      {lead && <TopLead lead={lead} secondaries={secondaries} />}
 
       <div className="mx-auto max-w-7xl px-5 pt-5 pb-12">
         {home.source === "seed" && (
@@ -41,7 +47,7 @@ export default async function HomePage() {
         )}
 
         <SectionLabel
-          subtitle={`${home.totalArticles} headlines · last 36h · ${orderedCats.length} desks`}
+          subtitle={`${home.totalArticles} headlines · last 24h · ${orderedCats.length} desks`}
         >
           Headlines
         </SectionLabel>

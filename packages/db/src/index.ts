@@ -74,7 +74,8 @@ export function getServiceClient(): SupabaseClient {
 // Query helpers used by both dashboard and workers.
 // ────────────────────────────────────────────────────────────────────────────
 
-const SOURCE_FIELDS = "slug, display_name, country, lang, paywall, category";
+const SOURCE_FIELDS =
+  "slug, display_name, country, lang, paywall, category, tier";
 
 const ARTICLE_FIELDS = `
   id, source_id, url, url_canonical, lang,
@@ -84,20 +85,65 @@ const ARTICLE_FIELDS = `
   source:sources(${SOURCE_FIELDS})
 `;
 
-/** Last N articles, freshest-first. Used by `/feed`. */
+/** Articles within the last N hours, freshest-first. Used by `/feed`. */
 export async function listLatestArticles(
   client: SupabaseClient,
-  limit = 60,
+  opts: { limit?: number; sinceHours?: number } = {},
 ): Promise<ArticleWithSource[]> {
+  const limit = opts.limit ?? 200;
+  const sinceHours = opts.sinceHours ?? 24;
+  const sinceIso = new Date(
+    Date.now() - sinceHours * 3600 * 1000,
+  ).toISOString();
+
   const { data, error } = await client
     .from("articles")
     .select(ARTICLE_FIELDS)
+    .gte("published_at", sinceIso)
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("fetched_at", { ascending: false })
     .limit(limit);
 
   if (error) throw error;
   return (data ?? []) as unknown as ArticleWithSource[];
+}
+
+/**
+ * Top "lead" stories for the Drudge-style banner: the most recent articles
+ * from tier-1 sources, deduplicated by source so the lead and secondaries
+ * come from different outlets. Returns up to `limit` items, freshest first.
+ */
+export async function listTopLeads(
+  client: SupabaseClient,
+  opts: { sinceHours?: number; limit?: number } = {},
+): Promise<ArticleWithSource[]> {
+  const sinceHours = opts.sinceHours ?? 24;
+  const limit = opts.limit ?? 4;
+  const sinceIso = new Date(
+    Date.now() - sinceHours * 3600 * 1000,
+  ).toISOString();
+
+  // Pull a wider window than we need so we have material to dedupe by source.
+  const { data, error } = await client
+    .from("articles")
+    .select(ARTICLE_FIELDS)
+    .gte("published_at", sinceIso)
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .limit(80);
+
+  if (error) throw error;
+
+  const seen = new Set<string>();
+  const leads: ArticleWithSource[] = [];
+  for (const a of (data ?? []) as unknown as ArticleWithSource[]) {
+    if (a.source?.tier !== 1) continue;
+    const slug = a.source?.slug ?? "?";
+    if (seen.has(slug)) continue;
+    seen.add(slug);
+    leads.push(a);
+    if (leads.length >= limit) break;
+  }
+  return leads;
 }
 
 /**
@@ -113,7 +159,7 @@ export async function listArticlesByCategory(
     perCategoryLimit?: number;
   } = {},
 ): Promise<Map<string, ArticleWithSource[]>> {
-  const sinceHours = opts.sinceHours ?? 36;
+  const sinceHours = opts.sinceHours ?? 24;
   const totalLimit = opts.totalLimit ?? 600;
   const perCategoryLimit = opts.perCategoryLimit ?? 12;
 

@@ -10,14 +10,14 @@ export const revalidate = 60;
 export const metadata = { title: "Live feed — China–Taiwan Monitor" };
 
 export default async function FeedPage() {
-  const { articles, source } = await getFeed(80);
+  const { articles, source } = await getFeed({ sinceHours: 24, limit: 200 });
 
   return (
     <div className="mx-auto max-w-5xl px-5 pt-6 pb-12">
       <SectionLabel
         subtitle={
           source === "live"
-            ? `${articles.length} most recent · refreshed every 60s`
+            ? `${articles.length} stories · last 24 hours · refreshed every 60s`
             : `${articles.length} from seed brief · live feed activates when ingestion worker is wired`
         }
       >
