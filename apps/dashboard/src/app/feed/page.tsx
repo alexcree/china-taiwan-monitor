@@ -1,6 +1,7 @@
 import { getFeed } from "@/lib/articles";
 import { SectionLabel } from "@/components/brief/section-label";
-import { domainOf, formatArticleTime, isPaywalled } from "@ctm/shared";
+import { LocalTime } from "@/components/local-time";
+import { domainOf, isPaywalled } from "@ctm/shared";
 
 // 60s revalidation — close to the 15-min ingestion cadence without keeping
 // the page stale for an entire pass.
@@ -86,9 +87,10 @@ export default async function FeedPage() {
                   </span>
                 )}
                 {a.published_at && (
-                  <span className="ml-auto tabular-nums whitespace-nowrap">
-                    {formatArticleTime(a.published_at)}
-                  </span>
+                  <LocalTime
+                    iso={a.published_at}
+                    className="ml-auto tabular-nums whitespace-nowrap"
+                  />
                 )}
               </div>
             </li>

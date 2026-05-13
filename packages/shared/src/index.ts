@@ -59,8 +59,10 @@ const MONTHS_SHORT = [
 ];
 
 /**
- * Render an article's publish time as an absolute date (and time if present).
- * Returns "May 12 · 14:30 UTC" when time is meaningful, "May 12, 2026" for
+ * Render an article's publish time as an absolute date (and time if present)
+ * in UTC. Used for SSR placeholders before client-side localization swaps in.
+ *
+ * Returns "May 12, 14:30 UTC" when time is meaningful, "May 12, 2026" for
  * older items, or empty string if the input is missing/invalid.
  */
 export function formatArticleTime(
@@ -77,18 +79,58 @@ export function formatArticleTime(
   const hh = String(d.getUTCHours()).padStart(2, "0");
   const mm = String(d.getUTCMinutes()).padStart(2, "0");
 
-  // If the ISO had a time component (anything but pure-midnight is meaningful;
-  // even midnight UTC is meaningful if explicit), show time.
   const hasMeaningfulTime = /T\d{2}:\d{2}/.test(publishedAt);
 
   if (opts.includeYear) {
     return hasMeaningfulTime
-      ? `${month} ${day}, ${year} · ${hh}:${mm} UTC`
+      ? `${month} ${day}, ${year}, ${hh}:${mm} UTC`
       : `${month} ${day}, ${year}`;
   }
   return hasMeaningfulTime
-    ? `${month} ${day} · ${hh}:${mm} UTC`
+    ? `${month} ${day}, ${hh}:${mm} UTC`
     : `${month} ${day}, ${year}`;
+}
+
+/**
+ * Render an article's publish time in the visitor's local timezone, with a
+ * short timezone name (e.g., "May 12, 07:30 PDT"). Browser/client only —
+ * relies on `Intl.DateTimeFormat` resolving the runtime timezone.
+ *
+ * Falls back to the UTC formatter for invalid inputs or non-DOM runtimes.
+ */
+export function formatArticleTimeLocal(
+  publishedAt: string | undefined,
+  opts: { includeYear?: boolean } = {},
+): string {
+  if (!publishedAt) return "";
+  const ms = Date.parse(publishedAt);
+  if (Number.isNaN(ms)) return "";
+  const d = new Date(ms);
+  const hasMeaningfulTime = /T\d{2}:\d{2}/.test(publishedAt);
+
+  try {
+    if (!hasMeaningfulTime) {
+      return new Intl.DateTimeFormat(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }).format(d);
+    }
+    const fmt = new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      day: "numeric",
+      ...(opts.includeYear ? { year: "numeric" } : {}),
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZoneName: "short",
+    });
+    // Intl outputs e.g. "May 12, 07:30 PDT" — usually clean; normalize the
+    // narrow no-break space the API sometimes inserts around the TZ name.
+    return fmt.format(d).replace(/ /g, " ");
+  } catch {
+    return formatArticleTime(publishedAt, opts);
+  }
 }
 
 /**
