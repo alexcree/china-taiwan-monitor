@@ -46,6 +46,7 @@ async function pollSource(
   const empty: IngestResult = {
     inserted: 0,
     skipped_duplicate: 0,
+    skipped_relevance: 0,
     failed: 0,
   };
 
@@ -131,20 +132,23 @@ export async function runIngestionPass(): Promise<void> {
 
   let okSources = 0;
   let totalInserted = 0;
-  let totalSkipped = 0;
+  let totalDedup = 0;
+  let totalRelevance = 0;
   let totalFailed = 0;
 
   for (const r of results) {
     if (r.httpStatus === 200) okSources++;
     totalInserted += r.inserted;
-    totalSkipped += r.skipped_duplicate;
+    totalDedup += r.skipped_duplicate;
+    totalRelevance += r.skipped_relevance;
     totalFailed += r.failed;
   }
 
   const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
   console.log(
     `[ingest] done in ${elapsed}s · ok=${okSources}/${sources.length} ` +
-      `inserted=${totalInserted} dedup_skipped=${totalSkipped} failed=${totalFailed}`,
+      `inserted=${totalInserted} dedup_skipped=${totalDedup} ` +
+      `relevance_skipped=${totalRelevance} failed=${totalFailed}`,
   );
 }
 

@@ -1,3 +1,5 @@
+export { isChinaTaiwanRelevant, type RelevanceInput } from "./relevance.js";
+
 export function formatBriefDate(isoDate: string): string {
   const [y, m, d] = isoDate.split("-").map(Number);
   if (!y || !m || !d) return isoDate;

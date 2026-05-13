@@ -158,6 +158,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@ctm/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@ctm/sources':
         specifier: workspace:*
         version: link:../sources

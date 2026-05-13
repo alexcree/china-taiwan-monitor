@@ -1,11 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ArticleInsert, SourceRow } from "@ctm/db";
+import { isChinaTaiwanRelevant } from "@ctm/shared";
 import { canonicalizeUrl, contentHash } from "./dedup.js";
 import type { RssItem } from "./rss.js";
 
 export interface IngestResult {
   inserted: number;
   skipped_duplicate: number;
+  skipped_relevance: number;
   failed: number;
 }
 
@@ -21,10 +23,35 @@ export async function ingestItems(
   items: RssItem[],
 ): Promise<IngestResult> {
   if (items.length === 0) {
-    return { inserted: 0, skipped_duplicate: 0, failed: 0 };
+    return {
+      inserted: 0,
+      skipped_duplicate: 0,
+      skipped_relevance: 0,
+      failed: 0,
+    };
   }
 
-  const rows: ArticleInsert[] = items.map((item) => {
+  let skippedRelevance = 0;
+  const relevantItems = items.filter((item) => {
+    const ok = isChinaTaiwanRelevant({
+      title: item.title,
+      summary: item.summary,
+      url: item.url,
+    });
+    if (!ok) skippedRelevance++;
+    return ok;
+  });
+
+  if (relevantItems.length === 0) {
+    return {
+      inserted: 0,
+      skipped_duplicate: 0,
+      skipped_relevance: skippedRelevance,
+      failed: 0,
+    };
+  }
+
+  const rows: ArticleInsert[] = relevantItems.map((item) => {
     const url_canonical = canonicalizeUrl(item.url);
     return {
       source_id: source.id,
@@ -72,5 +99,10 @@ export async function ingestItems(
     skipped = rows.length - inserted;
   }
 
-  return { inserted, skipped_duplicate: skipped, failed };
+  return {
+    inserted,
+    skipped_duplicate: skipped,
+    skipped_relevance: skippedRelevance,
+    failed,
+  };
 }
