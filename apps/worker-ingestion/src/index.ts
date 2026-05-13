@@ -1,20 +1,135 @@
 /**
- * Ingestion worker — Phase 1 (not yet implemented).
+ * worker-ingestion — Phase 2 entrypoint.
  *
- * Will run every 15 minutes:
- *   1. Pull from RSS feeds in the source registry.
- *   2. Run per-outlet Playwright scrapers where RSS is unavailable.
- *   3. Store raw HTML + extracted text in Supabase `articles`.
- *   4. Enqueue translation (non-English) and scoring jobs.
+ * Polls every enabled RSS source in the `sources` table, fetches the feed,
+ * canonicalizes URLs, computes content hashes for dedup, and upserts new
+ * items into `articles`. Updates source health columns regardless of outcome.
  *
- * Respects robots.txt and per-domain rate limits. Skips duplicate URLs.
+ * Designed to run on a 15-minute GitHub Actions cron in Phase 2; rehouse on
+ * a small VPS in Phase 3 when scrapers and per-tier cadence are introduced.
  */
 
-async function main() {
-  console.log("[ingestion] not yet implemented — Phase 1");
+import "dotenv/config";
+import { getServiceClient, listEnabledSources, type SourceRow } from "@ctm/db";
+import { fetchFeed } from "./rss.js";
+import { ingestItems, type IngestResult } from "./ingest.js";
+
+const CONCURRENCY = 6;
+const PER_SOURCE_TIMEOUT_MS = 20_000;
+
+async function pollSource(
+  supabase: ReturnType<typeof getServiceClient>,
+  source: SourceRow,
+): Promise<IngestResult & { source: string; httpStatus: number }> {
+  const url = source.rss_url;
+  const empty: IngestResult = {
+    inserted: 0,
+    skipped_duplicate: 0,
+    failed: 0,
+  };
+
+  if (!url) {
+    return { ...empty, source: source.slug, httpStatus: 0 };
+  }
+
+  let httpStatus = 0;
+  try {
+    const items = await Promise.race([
+      fetchFeed(url),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error("feed timeout")),
+          PER_SOURCE_TIMEOUT_MS,
+        ),
+      ),
+    ]);
+    httpStatus = 200;
+    const result = await ingestItems(supabase, source, items);
+
+    await supabase
+      .from("sources")
+      .update({ last_fetched_at: new Date().toISOString(), last_status: 200 })
+      .eq("id", source.id);
+
+    return { ...result, source: source.slug, httpStatus };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`[poll] ${source.slug} failed: ${msg}`);
+    httpStatus = 599; // generic fetch failure
+    await supabase
+      .from("sources")
+      .update({
+        last_fetched_at: new Date().toISOString(),
+        last_status: httpStatus,
+      })
+      .eq("id", source.id);
+    return {
+      ...empty,
+      failed: 1,
+      source: source.slug,
+      httpStatus,
+    };
+  }
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+/**
+ * Run pollers in a bounded-concurrency pool. Returns aggregate stats.
+ */
+async function runPool<T, R>(
+  items: readonly T[],
+  worker: (item: T) => Promise<R>,
+  concurrency: number,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let idx = 0;
+
+  async function pull(): Promise<void> {
+    while (true) {
+      const i = idx++;
+      if (i >= items.length) return;
+      results[i] = await worker(items[i]!);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, () => pull()),
+  );
+  return results;
+}
+
+export async function runIngestionPass(): Promise<void> {
+  const supabase = getServiceClient();
+  const sources = await listEnabledSources(supabase, { mode: "rss" });
+
+  console.log(
+    `[ingest] starting pass · ${sources.length} enabled RSS sources · concurrency=${CONCURRENCY}`,
+  );
+  const t0 = Date.now();
+
+  const results = await runPool(sources, (s) => pollSource(supabase, s), CONCURRENCY);
+
+  let okSources = 0;
+  let totalInserted = 0;
+  let totalSkipped = 0;
+  let totalFailed = 0;
+
+  for (const r of results) {
+    if (r.httpStatus === 200) okSources++;
+    totalInserted += r.inserted;
+    totalSkipped += r.skipped_duplicate;
+    totalFailed += r.failed;
+  }
+
+  const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+  console.log(
+    `[ingest] done in ${elapsed}s · ok=${okSources}/${sources.length} ` +
+      `inserted=${totalInserted} dedup_skipped=${totalSkipped} failed=${totalFailed}`,
+  );
+}
+
+runIngestionPass()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });

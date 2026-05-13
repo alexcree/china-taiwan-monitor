@@ -6,5 +6,6 @@ packages:
 # fetchers — sharp ships native image processing for Next.js, unrs-resolver
 # is the Rust resolver used by eslint-plugin-import.
 allowBuilds:
+  esbuild: true
   sharp: true
   unrs-resolver: true
