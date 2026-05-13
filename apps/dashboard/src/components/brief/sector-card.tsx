@@ -12,116 +12,95 @@ export function SectorCard({
   sector: Sector;
   data: SectorData;
 }) {
-  const totalSources = data.english_sources.length + data.chinese_sources.length;
+  const totalSources =
+    data.english_sources.length + data.chinese_sources.length;
+
+  // Top 2 summary bullets only — keep the card dense.
+  const topSummary = data.summary.slice(0, 2);
 
   return (
-    <article className="rule-top py-8">
-      <div className="flex items-baseline justify-between mb-6">
-        <h2 className="font-mono text-sm tracking-wider text-[color:var(--color-accent)]">
+    <article className="bg-[color:var(--color-surface)] border border-[color:var(--color-border)] flex flex-col">
+      <header className="px-4 py-2.5 border-b border-[color:var(--color-border)] flex items-baseline justify-between bg-[color:var(--color-surface-2)]">
+        <h2 className="font-mono text-[12px] font-bold tracking-[0.18em] text-[color:var(--color-accent)]">
           {SECTOR_LABELS[sector].toUpperCase()}
         </h2>
-        <span className="font-mono text-xs text-[color:var(--color-fg-dim)] tabular-nums">
-          {totalSources} src · {data.english_sources.length} EN ·{" "}
-          {data.chinese_sources.length} ZH
+        <span className="font-mono text-[10px] text-[color:var(--color-fg-dim)] tabular-nums">
+          {totalSources} src
         </span>
-      </div>
+      </header>
 
-      <ul className="space-y-2.5 max-w-3xl mb-7">
-        {data.summary.map((line, i) => (
-          <li
-            key={i}
-            className="flex gap-3 text-[15px] leading-relaxed text-[color:var(--color-fg)]"
-          >
-            <span className="text-[color:var(--color-fg-dim)] pt-0.5 shrink-0">
-              ▸
-            </span>
-            <span>{line}</span>
+      {topSummary.length > 0 && (
+        <div className="px-4 py-3 border-b border-[color:var(--color-border)]">
+          <ul className="space-y-1.5">
+            {topSummary.map((line, i) => (
+              <li
+                key={i}
+                className="flex gap-2 text-[13px] leading-snug text-[color:var(--color-fg-muted)]"
+              >
+                <span className="text-[color:var(--color-accent)] shrink-0 pt-0.5">
+                  ▸
+                </span>
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <ul className="divide-y divide-[color:var(--color-border)]">
+        {data.english_sources.map((src, i) => (
+          <li key={`en-${i}`} className="px-4 py-2.5">
+            <a
+              href={src.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="headline-link block text-[14px] leading-snug font-medium"
+            >
+              {src.headline}
+            </a>
+            <div className="mt-1 flex items-center gap-2 font-mono text-[10px] text-[color:var(--color-fg-dim)]">
+              <span className="text-[color:var(--color-en)] font-semibold tracking-wider">
+                EN
+              </span>
+              <span>·</span>
+              <span>{domainOf(src.url)}</span>
+            </div>
+          </li>
+        ))}
+        {data.chinese_sources.map((src, i) => (
+          <li key={`zh-${i}`} className="px-4 py-2.5">
+            <a
+              href={src.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="headline-link block"
+            >
+              <span className="block text-[14px] leading-snug font-medium">
+                {src.headline_original}
+              </span>
+              <span className="block mt-0.5 text-[12px] leading-snug text-[color:var(--color-fg-muted)] italic">
+                ↳ {src.headline_en}
+              </span>
+            </a>
+            <div className="mt-1 flex items-center gap-2 font-mono text-[10px] text-[color:var(--color-fg-dim)]">
+              <span className="text-[color:var(--color-zh)] font-semibold tracking-wider">
+                ZH
+              </span>
+              <span>·</span>
+              <span>{domainOf(src.url)}</span>
+            </div>
           </li>
         ))}
       </ul>
 
-      <div className="border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3 mb-6 max-w-3xl">
-        <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.18em] text-[color:var(--color-fg-dim)] uppercase mb-1">
-          Analyst note
-          <span className="text-[color:var(--color-accent-dim)]">
-            · newsletter only
-          </span>
-        </div>
+      <footer className="mt-auto px-4 py-2.5 border-t border-[color:var(--color-border)] bg-[color:var(--color-surface-2)]">
         <Link
           href="/subscribe"
-          className="text-xs text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-accent)] transition-colors"
+          className="font-mono text-[11px] text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-accent)] transition-colors"
         >
-          → Read the analyst&rsquo;s synthesis for {SECTOR_LABELS[sector]} in today&rsquo;s newsletter
+          → Full list + analyst note in newsletter
         </Link>
-      </div>
-
-      <div>
-        <div className="font-mono text-[10px] tracking-[0.18em] text-[color:var(--color-fg-dim)] uppercase mb-3">
-          Top sources
-        </div>
-        <ul className="space-y-3">
-          {data.english_sources.map((src, i) => (
-            <li key={`en-${i}`} className="flex gap-3">
-              <span className="font-mono text-[10px] tracking-wider text-[color:var(--color-en)] mt-1 shrink-0">
-                EN
-              </span>
-              <div className="flex-1 min-w-0">
-                <a
-                  href={src.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[15px] text-[color:var(--color-fg)] hover:text-[color:var(--color-accent)] transition-colors"
-                >
-                  {src.headline}
-                </a>
-                <div className="mt-0.5 text-sm text-[color:var(--color-fg-muted)] leading-snug">
-                  {src.summary_short}
-                </div>
-                <div className="mt-1 font-mono text-[11px] text-[color:var(--color-fg-dim)]">
-                  {domainOf(src.url)}
-                </div>
-              </div>
-            </li>
-          ))}
-          {data.chinese_sources.map((src, i) => (
-            <li key={`zh-${i}`} className="flex gap-3">
-              <span className="font-mono text-[10px] tracking-wider text-[color:var(--color-zh)] mt-1 shrink-0">
-                ZH
-              </span>
-              <div className="flex-1 min-w-0">
-                <a
-                  href={src.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[15px] text-[color:var(--color-fg)] hover:text-[color:var(--color-accent)] transition-colors"
-                >
-                  <span className="text-[color:var(--color-fg-muted)] mr-2">
-                    {src.headline_original}
-                  </span>
-                  <span className="text-[color:var(--color-fg-dim)]">
-                    — {src.headline_en}
-                  </span>
-                </a>
-                <div className="mt-0.5 text-sm text-[color:var(--color-fg-muted)] leading-snug">
-                  {src.summary_short_en}
-                </div>
-                <div className="mt-1 font-mono text-[11px] text-[color:var(--color-fg-dim)]">
-                  {domainOf(src.url)}
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-
-        {totalSources >= 5 && (
-          <Link
-            href="/subscribe"
-            className="mt-4 inline-block font-mono text-xs text-[color:var(--color-fg-dim)] hover:text-[color:var(--color-accent)] transition-colors"
-          >
-            → Full source list (8–20 articles, annotated) in the newsletter
-          </Link>
-        )}
-      </div>
+      </footer>
     </article>
   );
 }

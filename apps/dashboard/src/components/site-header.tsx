@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 const NAV = [
-  { href: "/", label: "Brief" },
-  { href: "/feed", label: "Feed" },
+  { href: "/", label: "Today" },
+  { href: "/feed", label: "Live feed" },
   { href: "/archive", label: "Archive" },
   { href: "/indicators", label: "Indicators" },
   { href: "/scenarios", label: "Scenarios" },
@@ -11,39 +11,56 @@ const NAV = [
 ];
 
 export function SiteHeader() {
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
   return (
-    <header className="rule-bottom sticky top-0 z-20 backdrop-blur-md bg-[color:var(--color-bg)]/85">
-      <div className="mx-auto max-w-6xl px-6 py-3 flex items-center gap-8">
-        <Link href="/" className="flex items-baseline gap-2">
-          <span className="font-mono text-[color:var(--color-accent)] text-sm tracking-wider">
+    <header className="bg-[color:var(--color-surface)] rule-bottom">
+      {/* Masthead */}
+      <div className="mx-auto max-w-7xl px-5 py-4 flex items-baseline gap-4 flex-wrap">
+        <Link href="/" className="flex items-baseline gap-3">
+          <span className="font-mono text-[color:var(--color-accent)] text-sm font-bold tracking-[0.18em]">
             CTM
           </span>
-          <span className="font-mono text-sm tracking-tight text-[color:var(--color-fg)]">
+          <span className="text-2xl font-bold tracking-tight text-[color:var(--color-fg)]">
             China–Taiwan Monitor
           </span>
         </Link>
-
-        <nav className="hidden md:flex items-center gap-5 text-sm">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="font-mono text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-fg)] transition-colors"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="ml-auto">
-          <Link
-            href="/subscribe"
-            className="font-mono text-xs tracking-wider px-3 py-1.5 border border-[color:var(--color-accent-dim)] text-[color:var(--color-accent)] hover:bg-[color:var(--color-accent)] hover:text-[color:var(--color-bg)] transition-colors"
-          >
-            SUBSCRIBE →
-          </Link>
-        </div>
+        <span className="text-xs text-[color:var(--color-fg-dim)] font-mono ml-auto">
+          {today}
+        </span>
+        <Link
+          href="/subscribe"
+          className="font-mono text-xs tracking-wider px-3 py-1.5 bg-[color:var(--color-accent)] text-white hover:bg-[color:var(--color-accent-2)] transition-colors"
+        >
+          SUBSCRIBE
+        </Link>
       </div>
+
+      {/* Nav strip */}
+      <nav className="rule-top bg-[color:var(--color-surface-2)]">
+        <div className="mx-auto max-w-7xl px-5 py-2 flex items-center gap-1 overflow-x-auto">
+          {NAV.map((item, i) => (
+            <span key={item.href} className="flex items-center">
+              {i > 0 && (
+                <span className="text-[color:var(--color-border-strong)] px-1 select-none">
+                  /
+                </span>
+              )}
+              <Link
+                href={item.href}
+                className="font-mono text-[12px] tracking-wide text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-accent)] px-2 py-1 transition-colors whitespace-nowrap"
+              >
+                {item.label}
+              </Link>
+            </span>
+          ))}
+        </div>
+      </nav>
     </header>
   );
 }
