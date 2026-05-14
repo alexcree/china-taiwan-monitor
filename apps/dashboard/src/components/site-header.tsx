@@ -4,10 +4,6 @@ import Link from "next/link";
 const NAV = [
   { href: "/", label: "Today" },
   { href: "/feed", label: "Live feed" },
-  { href: "/archive", label: "Archive" },
-  { href: "/indicators", label: "Indicators" },
-  { href: "/scenarios", label: "Scenarios" },
-  { href: "/sources", label: "Sources" },
   { href: "/about", label: "About" },
 ];
 
