@@ -13,9 +13,11 @@
     "typecheck": "tsc --noEmit",
     "seed-sources": "tsx src/scripts/seed-sources.ts",
     "clean-irrelevant": "tsx src/scripts/clean-irrelevant.ts",
-    "relevance-sample": "tsx src/scripts/relevance-sample.ts"
+    "relevance-sample": "tsx src/scripts/relevance-sample.ts",
+    "backfill-summaries": "tsx src/scripts/backfill-summaries.ts"
   },
   "dependencies": {
+    "@ctm/llm": "workspace:*",
     "@ctm/shared": "workspace:*",
     "@ctm/sources": "workspace:*",
     "@supabase/supabase-js": "^2.45.0",

@@ -123,6 +123,11 @@ export function SourceCategoryCard({
                   </span>
                 )}
               </a>
+              {a.summary_en && (
+                <p className="mt-1.5 text-[13px] leading-snug text-[color:var(--color-fg-muted)]">
+                  {a.summary_en}
+                </p>
+              )}
               <Byline
                 url={a.url}
                 lang={a.lang as "en" | "zh-cn" | "zh-tw"}

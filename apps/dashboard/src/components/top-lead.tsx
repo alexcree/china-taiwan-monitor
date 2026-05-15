@@ -59,6 +59,11 @@ export function TopLead({
             </h2>
           )}
         </a>
+        {lead.summary_en && (
+          <p className="mt-4 max-w-3xl mx-auto text-[15px] md:text-[16px] leading-snug text-[color:var(--color-fg-muted)]">
+            {lead.summary_en}
+          </p>
+        )}
         <LeadByline a={lead} />
       </div>
 
@@ -82,6 +87,11 @@ export function TopLead({
                     </p>
                   )}
                 </a>
+                {s.summary_en && (
+                  <p className="mt-2 text-[13px] leading-snug text-[color:var(--color-fg-muted)]">
+                    {s.summary_en}
+                  </p>
+                )}
                 <LeadByline a={s} />
               </article>
             ))}

@@ -21,7 +21,7 @@ import { fileURLToPath } from "node:url";
   for (let i = 0; i < 10; i++) {
     const p = join(dir, ".env");
     if (existsSync(p)) {
-      loadDotenv({ path: p });
+      loadDotenv({ path: p, override: true });
       return;
     }
     const parent = dirname(dir);

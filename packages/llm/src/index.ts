@@ -1,12 +1,14 @@
 /**
- * Anthropic client + prompt templates — Phase 1/2.
+ * Anthropic client + prompt templates.
  *
- * Will export:
- *   - Configured Anthropic client (`claude-opus-4-7`) with prompt caching
- *     on the system prompt
- *   - Translation helper (Chinese -> English, cached by URL hash)
- *   - Scoring helper (batched 10-at-a-time triage call)
- *   - Brief Pass 1 (per-sector) and Pass 2 (synthesis) call wrappers
+ * Phase 2: per-article summarization (./summarize).
+ * Phase 3: translation + scoring + brief generation.
  */
 
-export const ANTHROPIC_MODEL = "claude-opus-4-7" as const;
+export const ANTHROPIC_BRIEF_MODEL = "claude-opus-4-7" as const;
+export const ANTHROPIC_SUMMARY_MODEL = "claude-haiku-4-5-20251001" as const;
+
+export {
+  summarizeNewArticles,
+  type SummarizeResult,
+} from "./summarize.js";

@@ -22,7 +22,9 @@ import { fileURLToPath } from "node:url";
   for (let i = 0; i < 10; i++) {
     const p = join(dir, ".env");
     if (existsSync(p)) {
-      loadDotenv({ path: p });
+      // override: true so .env values win over any pre-set shell vars
+      // (e.g., a host-injected empty ANTHROPIC_API_KEY=).
+      loadDotenv({ path: p, override: true });
       return;
     }
     const parent = dirname(dir);
@@ -35,6 +37,7 @@ import { getServiceClient, listEnabledSources, type SourceRow } from "@ctm/db";
 import { fetchFeed } from "./rss.js";
 import { ingestItems, type IngestResult } from "./ingest.js";
 import { refreshMarketQuotes } from "./markets.js";
+import { summarizeNewArticles } from "@ctm/llm";
 
 const CONCURRENCY = 10;
 const PER_SOURCE_TIMEOUT_MS = 20_000;
@@ -152,7 +155,16 @@ export async function runIngestionPass(): Promise<void> {
       `relevance_skipped=${totalRelevance} failed=${totalFailed}`,
   );
 
-  // Market quotes: refresh after RSS so a slow RSS pass doesn't delay them.
+  // Summarization: fill in summary_en for articles missing one.
+  // Bounded by SUMMARIZER_MAX_PER_PASS (default 200) so cost is predictable.
+  const t2 = Date.now();
+  const s = await summarizeNewArticles(supabase);
+  const elapsedS = ((Date.now() - t2) / 1000).toFixed(1);
+  console.log(
+    `[summarize] done in ${elapsedS}s · attempted=${s.attempted} written=${s.written} failed=${s.failed} batches=${s.batches}`,
+  );
+
+  // Market quotes: refresh after summarize.
   const t1 = Date.now();
   const m = await refreshMarketQuotes(supabase);
   const elapsedM = ((Date.now() - t1) / 1000).toFixed(1);

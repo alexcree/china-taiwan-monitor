@@ -72,7 +72,12 @@ export default async function FeedPage() {
                   </span>
                 )}
               </a>
-              <div className="mt-1 flex items-center gap-1.5 font-mono text-[10px] text-[color:var(--color-fg-dim)] flex-wrap">
+              {a.summary_en && (
+                <p className="mt-1.5 text-[13px] leading-snug text-[color:var(--color-fg-muted)]">
+                  {a.summary_en}
+                </p>
+              )}
+              <div className="mt-1.5 flex items-center gap-1.5 font-mono text-[10px] text-[color:var(--color-fg-dim)] flex-wrap">
                 <span className={`font-bold tracking-wider ${langPillColor}`}>
                   {langLabel}
                 </span>
