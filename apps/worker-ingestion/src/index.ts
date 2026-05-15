@@ -36,7 +36,7 @@ import { fetchFeed } from "./rss.js";
 import { ingestItems, type IngestResult } from "./ingest.js";
 import { refreshMarketQuotes } from "./markets.js";
 
-const CONCURRENCY = 6;
+const CONCURRENCY = 10;
 const PER_SOURCE_TIMEOUT_MS = 20_000;
 
 async function pollSource(
