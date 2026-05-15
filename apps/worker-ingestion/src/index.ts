@@ -155,13 +155,15 @@ export async function runIngestionPass(): Promise<void> {
       `relevance_skipped=${totalRelevance} failed=${totalFailed}`,
   );
 
-  // Summarization: fill in summary_en for articles missing one.
-  // Bounded by SUMMARIZER_MAX_PER_PASS (default 200) so cost is predictable.
+  // Summarization: fill in summary_en for articles inside the display
+  // window. Skip anything older than 24h — it won't appear on home / feed
+  // / TopLead, so there's no reason to spend tokens on it. Per-pass budget
+  // capped by SUMMARIZER_MAX_PER_PASS (default 200).
   const t2 = Date.now();
-  const s = await summarizeNewArticles(supabase);
+  const s = await summarizeNewArticles(supabase, { sinceHours: 24 });
   const elapsedS = ((Date.now() - t2) / 1000).toFixed(1);
   console.log(
-    `[summarize] done in ${elapsedS}s · attempted=${s.attempted} written=${s.written} failed=${s.failed} batches=${s.batches}`,
+    `[summarize] done in ${elapsedS}s · window=last ${s.window_hours}h · attempted=${s.attempted} written=${s.written} failed=${s.failed} batches=${s.batches}`,
   );
 
   // Market quotes: refresh after summarize.

@@ -59,6 +59,19 @@ export interface SummarizeResult {
   written: number;
   failed: number;
   batches: number;
+  /** Window applied to the query, in hours. */
+  window_hours: number;
+}
+
+export interface SummarizeOptions {
+  /**
+   * Only summarize articles whose `published_at` is within the last N hours.
+   * Defaults to 24h — matches the dashboard's display window. Articles
+   * outside the window don't appear on any page, so there's no reason to
+   * spend tokens on them. Relevance gating still happens at ingest time;
+   * this is an additional cost guard on top of that.
+   */
+  sinceHours?: number;
 }
 
 interface ArticleForSummary {
@@ -136,25 +149,42 @@ async function summarizeBatch(
 
 export async function summarizeNewArticles(
   supabase: SupabaseClient,
+  opts: SummarizeOptions = {},
 ): Promise<SummarizeResult> {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return { scanned: 0, attempted: 0, written: 0, failed: 0, batches: 0 };
-  }
+  const sinceHours = opts.sinceHours ?? 24;
+  const empty: SummarizeResult = {
+    scanned: 0,
+    attempted: 0,
+    written: 0,
+    failed: 0,
+    batches: 0,
+    window_hours: sinceHours,
+  };
+  if (!process.env.ANTHROPIC_API_KEY) return empty;
 
   const client = new Anthropic();
 
   // Pull articles missing summary_en, freshest first.
+  const sinceIso = new Date(
+    Date.now() - sinceHours * 3600 * 1000,
+  ).toISOString();
+
+  // Only summarize articles inside the display window. Anything older than
+  // sinceHours won't appear on home / feed / TopLead under current rules.
+  // Relevance has already been enforced at ingest, so everything in the
+  // articles table is China-relevant by construction.
   const { data, error } = await supabase
     .from("articles")
     .select("id, title_original, summary, lang")
     .is("summary_en", null)
+    .gte("published_at", sinceIso)
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("fetched_at", { ascending: false })
     .limit(MAX_PER_PASS);
 
   if (error) {
     console.warn(`[summarize] query failed: ${error.message}`);
-    return { scanned: 0, attempted: 0, written: 0, failed: 0, batches: 0 };
+    return empty;
   }
 
   const pending: ArticleForSummary[] = (data ?? []).map((r) => ({
@@ -164,9 +194,7 @@ export async function summarizeNewArticles(
     lang: (r.lang as string) ?? "en",
   }));
 
-  if (pending.length === 0) {
-    return { scanned: 0, attempted: 0, written: 0, failed: 0, batches: 0 };
-  }
+  if (pending.length === 0) return empty;
 
   let attempted = 0;
   let written = 0;
@@ -207,5 +235,12 @@ export async function summarizeNewArticles(
     }
   }
 
-  return { scanned: pending.length, attempted, written, failed, batches };
+  return {
+    scanned: pending.length,
+    attempted,
+    written,
+    failed,
+    batches,
+    window_hours: sinceHours,
+  };
 }

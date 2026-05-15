@@ -10,5 +10,6 @@ export const ANTHROPIC_SUMMARY_MODEL = "claude-haiku-4-5-20251001" as const;
 
 export {
   summarizeNewArticles,
+  type SummarizeOptions,
   type SummarizeResult,
 } from "./summarize.js";

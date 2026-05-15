@@ -46,27 +46,35 @@ async function main() {
     process.exit(1);
   }
 
+  // Backfill respects the same display-window default (24h). Override with
+  // SUMMARIZER_WINDOW_HOURS to widen for one-off catch-up runs.
+  const windowHours = Number(process.env.SUMMARIZER_WINDOW_HOURS ?? 24);
   const supabase = getServiceClient();
 
+  const sinceIso = new Date(
+    Date.now() - windowHours * 3600 * 1000,
+  ).toISOString();
   const { count: total } = await supabase
     .from("articles")
     .select("*", { count: "exact", head: true })
-    .is("summary_en", null);
-  console.log(`[backfill] ${total ?? "?"} articles need summaries.`);
+    .is("summary_en", null)
+    .gte("published_at", sinceIso);
+  console.log(
+    `[backfill] ${total ?? "?"} articles need summaries (last ${windowHours}h).`,
+  );
 
   let totalWritten = 0;
   let totalFailed = 0;
   let passes = 0;
   while (true) {
     passes++;
-    const r = await summarizeNewArticles(supabase);
+    const r = await summarizeNewArticles(supabase, { sinceHours: windowHours });
     console.log(
       `[backfill] pass ${passes}: attempted=${r.attempted} written=${r.written} failed=${r.failed} batches=${r.batches}`,
     );
     totalWritten += r.written;
     totalFailed += r.failed;
     if (r.attempted === 0) break;
-    // Brief pause between passes to be gentle on the API.
     await new Promise((s) => setTimeout(s, 1000));
   }
 
