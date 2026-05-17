@@ -23,6 +23,9 @@ importers:
       '@ctm/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@ctm/sources':
+        specifier: workspace:*
+        version: link:../../packages/sources
       '@supabase/supabase-js':
         specifier: ^2.45.0
         version: 2.105.4

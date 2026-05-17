@@ -86,6 +86,7 @@ const ARTICLE_FIELDS = `
   title_original, title_en, summary, summary_en,
   paywall, content_hash, sectors, importance, breaking,
   published_at, fetched_at, created_at,
+  primary_topic, subtopics, actors, countries, content_type,
   source:sources(${SOURCE_FIELDS})
 `;
 
@@ -155,17 +156,17 @@ export async function listTopLeads(
  * a per-category cap so high-volume wires don't crowd out smaller desks.
  * Used by the home page to render an aggregator-style grouped layout.
  */
-export async function listArticlesByCategory(
+export async function listArticlesByTopic(
   client: SupabaseClient,
   opts: {
     sinceHours?: number;
     totalLimit?: number;
-    perCategoryLimit?: number;
+    perTopicLimit?: number;
   } = {},
 ): Promise<Map<string, ArticleWithSource[]>> {
   const sinceHours = opts.sinceHours ?? 24;
   const totalLimit = opts.totalLimit ?? 600;
-  const perCategoryLimit = opts.perCategoryLimit ?? 12;
+  const perTopicLimit = opts.perTopicLimit ?? 12;
 
   const sinceIso = new Date(
     Date.now() - sinceHours * 3600 * 1000,
@@ -175,6 +176,7 @@ export async function listArticlesByCategory(
     .from("articles")
     .select(ARTICLE_FIELDS)
     .gte("published_at", sinceIso)
+    .not("primary_topic", "is", null)
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("fetched_at", { ascending: false })
     .limit(totalLimit);
@@ -183,14 +185,43 @@ export async function listArticlesByCategory(
 
   const buckets = new Map<string, ArticleWithSource[]>();
   for (const a of (data ?? []) as unknown as ArticleWithSource[]) {
-    const cat = a.source?.category ?? "general";
-    const bucket = buckets.get(cat) ?? [];
-    if (bucket.length < perCategoryLimit) {
+    const topic = a.primary_topic ?? "general";
+    const bucket = buckets.get(topic) ?? [];
+    if (bucket.length < perTopicLimit) {
       bucket.push(a);
-      buckets.set(cat, bucket);
+      buckets.set(topic, bucket);
     }
   }
   return buckets;
+}
+
+/**
+ * All articles for a single primary topic, freshest first. Used by the
+ * dedicated per-topic pages (/military, /politics, etc.). Default window
+ * is wider than the home (72h) to give topic pages meaningful depth.
+ */
+export async function listArticlesForTopic(
+  client: SupabaseClient,
+  topic: string,
+  opts: { sinceHours?: number; limit?: number } = {},
+): Promise<ArticleWithSource[]> {
+  const sinceHours = opts.sinceHours ?? 72;
+  const limit = opts.limit ?? 200;
+  const sinceIso = new Date(
+    Date.now() - sinceHours * 3600 * 1000,
+  ).toISOString();
+
+  const { data, error } = await client
+    .from("articles")
+    .select(ARTICLE_FIELDS)
+    .eq("primary_topic", topic)
+    .gte("published_at", sinceIso)
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("fetched_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data ?? []) as unknown as ArticleWithSource[];
 }
 
 /** Current snapshot of every tracked market quote. Returns null if empty. */

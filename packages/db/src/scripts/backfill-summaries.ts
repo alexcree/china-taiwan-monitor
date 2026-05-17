@@ -57,10 +57,10 @@ async function main() {
   const { count: total } = await supabase
     .from("articles")
     .select("*", { count: "exact", head: true })
-    .is("summary_en", null)
-    .gte("published_at", sinceIso);
+    .gte("published_at", sinceIso)
+    .or("summary_en.is.null,primary_topic.is.null");
   console.log(
-    `[backfill] ${total ?? "?"} articles need summaries (last ${windowHours}h).`,
+    `[backfill] ${total ?? "?"} articles need summary or classification (last ${windowHours}h).`,
   );
 
   let totalWritten = 0;

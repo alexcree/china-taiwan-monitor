@@ -1,7 +1,7 @@
 import {
   getAnonClient,
   isDbConfigured,
-  listArticlesByCategory,
+  listArticlesByTopic,
   listTopLeads,
   type ArticleWithSource,
 } from "@ctm/db";
@@ -41,10 +41,10 @@ export async function getHome(): Promise<HomeState> {
     if (client) {
       try {
         const [buckets, leads] = await Promise.all([
-          listArticlesByCategory(client, {
+          listArticlesByTopic(client, {
             sinceHours: 24,
             totalLimit: 600,
-            perCategoryLimit: 12,
+            perTopicLimit: 12,
           }),
           listTopLeads(client, { sinceHours: 24, limit: 4 }),
         ]);
@@ -205,15 +205,19 @@ function categoryForSeed(url: string, sector: Sector): string {
   } catch {
     /* ignore */
   }
-  if (DEFENSE_HOSTS.has(host) || sector === "defense") return "defense";
-  if (TECH_HOSTS.has(host) || sector === "tech" || sector === "cyber")
-    return "tech";
-  if (FINANCIAL_HOSTS.has(host) || sector === "economy" || sector === "property")
-    return "financial";
-  if (POLICY_HOSTS.has(host) || sector === "politics" || sector === "diplomacy")
-    return "policy";
-  if (GOV_HOSTS.has(host)) return "government";
-  if (WIRE_HOSTS.has(host)) return "wire";
+  // Map seed brief sector → primary_topic so the seed fallback produces
+  // the same bucket shape as the live data path.
+  if (DEFENSE_HOSTS.has(host) || sector === "defense") return "military";
+  if (sector === "tech") return "semiconductors";
+  if (sector === "cyber" || sector === "influence") return "cyber_info_ops";
+  if (FINANCIAL_HOSTS.has(host) || sector === "economy" || sector === "property" || sector === "consumer")
+    return "markets";
+  if (sector === "diplomacy") return "diplomacy";
+  if (sector === "politics") return "politics";
+  if (GOV_HOSTS.has(host)) return "politics";
+  if (TECH_HOSTS.has(host)) return "semiconductors";
+  if (POLICY_HOSTS.has(host)) return "us_china_taiwan";
+  if (WIRE_HOSTS.has(host)) return "us_china_taiwan";
   return "general";
 }
 
@@ -250,6 +254,11 @@ function makeSeedArticle(
     published_at: publishedAt ?? null,
     fetched_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
+    primary_topic: categoryForSeed(url, sector),
+    subtopics: [sector],
+    actors: null,
+    countries: null,
+    content_type: "news",
     source: null,
   };
 }

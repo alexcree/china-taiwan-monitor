@@ -14,6 +14,7 @@
     "@ctm/brief-schema": "workspace:*",
     "@ctm/db": "workspace:*",
     "@ctm/shared": "workspace:*",
+    "@ctm/sources": "workspace:*",
     "@supabase/supabase-js": "^2.45.0",
     "next": "^15.0.3",
     "react": "^19.0.0",

@@ -1,36 +1,12 @@
 import type { ArticleWithSource } from "@ctm/db";
+import {
+  PRIMARY_TOPIC_LABELS,
+  PRIMARY_TOPIC_PATHS,
+  type PrimaryTopic,
+} from "@ctm/brief-schema";
 import { domainOf, isPaywalled } from "@ctm/shared";
 import { LocalTime } from "@/components/local-time";
 import Link from "next/link";
-
-/**
- * Display labels for each `sources.category` value. Keep the keys in sync
- * with the SourceCategory union defined in @ctm/sources.
- */
-export const CATEGORY_LABELS: Record<string, string> = {
-  wire: "Wires",
-  defense: "Defense",
-  financial: "Markets & Finance",
-  tech: "Technology",
-  policy: "Policy",
-  think_tank: "Think Tanks",
-  government: "Government",
-  general: "General",
-  social: "Social",
-};
-
-/** Order in which categories appear on the home page (left → right, top → bottom). */
-export const CATEGORY_ORDER: string[] = [
-  "wire",
-  "defense",
-  "financial",
-  "tech",
-  "policy",
-  "government",
-  "think_tank",
-  "general",
-  "social",
-];
 
 function PaywallBadge() {
   return (
@@ -80,26 +56,45 @@ function Byline({
   );
 }
 
-export function SourceCategoryCard({
-  category,
+/**
+ * Card that renders one primary_topic bucket on the home page (or a
+ * compact per-topic view on the topic landing pages). Header links to
+ * the dedicated topic page if `linkedHeader` is true.
+ */
+export function TopicCard({
+  topic,
   articles,
+  linkedHeader = true,
 }: {
-  category: string;
+  topic: string;
   articles: ArticleWithSource[];
+  linkedHeader?: boolean;
 }) {
   if (articles.length === 0) return null;
-  const label = CATEGORY_LABELS[category] ?? category;
+  const label =
+    PRIMARY_TOPIC_LABELS[topic as PrimaryTopic] ?? topicLabelFallback(topic);
+  const path = PRIMARY_TOPIC_PATHS[topic as PrimaryTopic];
+
+  const HeaderInner = (
+    <header className="px-3 py-2 border-b border-[color:var(--color-border)] flex items-baseline justify-between bg-[color:var(--color-fg)] text-[color:var(--color-bg)]">
+      <h2 className="font-mono text-[11px] font-bold tracking-[0.18em]">
+        {label.toUpperCase()}
+      </h2>
+      <span className="font-mono text-[10px] tabular-nums opacity-70">
+        {articles.length}
+      </span>
+    </header>
+  );
 
   return (
     <article className="bg-[color:var(--color-surface)] border border-[color:var(--color-border)] flex flex-col break-inside-avoid mb-5">
-      <header className="px-3 py-2 border-b border-[color:var(--color-border)] flex items-baseline justify-between bg-[color:var(--color-fg)] text-[color:var(--color-bg)]">
-        <h2 className="font-mono text-[11px] font-bold tracking-[0.18em]">
-          {label.toUpperCase()}
-        </h2>
-        <span className="font-mono text-[10px] tabular-nums opacity-70">
-          {articles.length}
-        </span>
-      </header>
+      {linkedHeader && path ? (
+        <Link href={`/${path}`} aria-label={`See more in ${label}`}>
+          {HeaderInner}
+        </Link>
+      ) : (
+        HeaderInner
+      )}
 
       <ul className="divide-y divide-[color:var(--color-border)]">
         {articles.map((a) => {
@@ -140,14 +135,23 @@ export function SourceCategoryCard({
         })}
       </ul>
 
-      <footer className="mt-auto px-3 py-1.5 border-t border-[color:var(--color-border)] bg-[color:var(--color-surface-2)]">
-        <Link
-          href="/subscribe"
-          className="font-mono text-[10px] text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-accent)] transition-colors"
-        >
-          → Full {label.toLowerCase()} coverage in newsletter
-        </Link>
-      </footer>
+      {linkedHeader && path && (
+        <footer className="mt-auto px-3 py-1.5 border-t border-[color:var(--color-border)] bg-[color:var(--color-surface-2)]">
+          <Link
+            href={`/${path}`}
+            className="font-mono text-[10px] text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-accent)] transition-colors"
+          >
+            → More {label.toLowerCase()}
+          </Link>
+        </footer>
+      )}
     </article>
   );
+}
+
+function topicLabelFallback(slug: string): string {
+  return slug
+    .split("_")
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .join(" ");
 }

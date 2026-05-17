@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export * from "./markets.js";
+export * from "./taxonomy.js";
 
 export const SECTORS = [
   "defense",

@@ -38,6 +38,14 @@ export function SiteFooter() {
             </li>
             <li>
               <Link
+                href="/sources"
+                className="hover:text-[color:var(--color-accent)] transition-colors"
+              >
+                Source registry
+              </Link>
+            </li>
+            <li>
+              <Link
                 href="/about"
                 className="hover:text-[color:var(--color-accent)] transition-colors"
               >

@@ -122,6 +122,11 @@ function seedToArticle(
     published_at: publishedAt ?? null,
     fetched_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
+    primary_topic: null,
+    subtopics: null,
+    actors: null,
+    countries: null,
+    content_type: null,
     source: null,
   };
 }

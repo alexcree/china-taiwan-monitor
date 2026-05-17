@@ -54,6 +54,12 @@ export interface ArticleRow {
   published_at: string | null;
   fetched_at: string;
   created_at: string;
+  // Topic taxonomy — populated by the summarizer (migration 0003).
+  primary_topic: string | null;
+  subtopics: string[] | null;
+  actors: string[] | null;
+  countries: string[] | null;
+  content_type: string | null;
 }
 
 export interface MarketQuoteRow {

@@ -1,13 +1,11 @@
 import { getHome } from "@/lib/home";
 import { getLatestMarkets } from "@/lib/markets";
 import { MarketTicker } from "@/components/market-ticker";
-import {
-  SourceCategoryCard,
-  CATEGORY_ORDER,
-} from "@/components/source-category-card";
+import { TopicCard } from "@/components/topic-card";
 import { SectionLabel } from "@/components/brief/section-label";
 import { SubscribeInline } from "@/components/subscribe-inline";
 import { TopLead } from "@/components/top-lead";
+import { PRIMARY_TOPIC_ORDER } from "@ctm/brief-schema";
 
 // Match /feed cadence — close to the 15-min ingestion pass.
 export const revalidate = 60;
@@ -18,10 +16,17 @@ export default async function HomePage() {
     getLatestMarkets(),
   ]);
 
-  const orderedCats = [
-    ...CATEGORY_ORDER.filter((c) => (home.buckets.get(c)?.length ?? 0) > 0),
+  // Walk the canonical primary_topic order, dropping empty buckets, then
+  // append any non-enum topics that happen to be present (shouldn't happen
+  // with the check constraint, but harmless).
+  const orderedTopics = [
+    ...PRIMARY_TOPIC_ORDER.filter(
+      (t) => (home.buckets.get(t)?.length ?? 0) > 0,
+    ),
     ...Array.from(home.buckets.keys()).filter(
-      (c) => !CATEGORY_ORDER.includes(c) && (home.buckets.get(c)?.length ?? 0) > 0,
+      (t) =>
+        !PRIMARY_TOPIC_ORDER.includes(t as (typeof PRIMARY_TOPIC_ORDER)[number]) &&
+        (home.buckets.get(t)?.length ?? 0) > 0,
     ),
   ];
 
@@ -44,24 +49,21 @@ export default async function HomePage() {
             <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-[color:var(--color-accent)] font-bold mr-2">
               Seed mode
             </span>
-            Supabase is not configured. Once the ingestion worker has made its
-            first pass, this page will render live articles grouped by source
-            category.
+            Supabase is not configured. Once the ingestion worker has classified
+            articles, this page will render live coverage grouped by topic.
           </div>
         )}
 
         <SectionLabel
-          subtitle={`${home.totalArticles} headlines · last 24h · ${orderedCats.length} desks`}
+          subtitle={`${home.totalArticles} headlines · last 24h · ${orderedTopics.length} topics`}
         >
           Headlines
         </SectionLabel>
 
         <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-5">
-          {orderedCats.map((cat) => {
-            const items = home.buckets.get(cat) ?? [];
-            return (
-              <SourceCategoryCard key={cat} category={cat} articles={items} />
-            );
+          {orderedTopics.map((topic) => {
+            const items = home.buckets.get(topic) ?? [];
+            return <TopicCard key={topic} topic={topic} articles={items} />;
           })}
         </div>
 
