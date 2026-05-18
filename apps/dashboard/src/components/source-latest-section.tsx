@@ -1,6 +1,18 @@
 import type { SourceLatestGroup } from "@/lib/home";
-import { isPaywalled } from "@ctm/shared";
+import { domainOf, isPaywalled } from "@ctm/shared";
 import { LocalTime } from "@/components/local-time";
+
+/**
+ * Returns Google's s2 favicon endpoint URL for a given source URL.
+ * Free, no auth, no rate limit in practice; returns a fallback when a
+ * site has no proper icon. We request at sz=64 and render at 18px so
+ * retina screens stay sharp.
+ */
+function faviconUrl(url: string, size = 64): string | null {
+  const host = domainOf(url);
+  if (!host || host === url) return null;
+  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=${size}`;
+}
 
 /**
  * Curated palette of 14 distinct, accessibility-friendly colors that fit
@@ -47,12 +59,27 @@ function PaywallBadge() {
 
 function SourceCard({ group }: { group: SourceLatestGroup }) {
   const color = colorForSlug(group.slug);
+  const favicon = faviconUrl(group.url);
   return (
     <section
       className="bg-[color:var(--color-surface)] border border-[color:var(--color-border)] break-inside-avoid mb-5"
       style={{ borderTop: `4px solid ${color}` }}
     >
       <header className="px-3 pt-2.5 pb-2 flex items-center gap-2 flex-wrap border-b border-[color:var(--color-border)]">
+        {favicon && (
+          // Plain <img> intentional — Next/Image would route 70+ tiny third-
+          // party favicons through Vercel's image optimizer per page render.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={favicon}
+            alt=""
+            width={18}
+            height={18}
+            loading="lazy"
+            decoding="async"
+            className="block shrink-0 rounded-sm bg-[color:var(--color-surface-2)]"
+          />
+        )}
         <a
           href={group.url}
           target="_blank"
