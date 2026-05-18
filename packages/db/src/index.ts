@@ -93,7 +93,12 @@ const ARTICLE_FIELDS = `
 /** Articles within the last N hours, freshest-first. Used by `/feed`. */
 export async function listLatestArticles(
   client: SupabaseClient,
-  opts: { limit?: number; sinceHours?: number } = {},
+  opts: {
+    limit?: number;
+    sinceHours?: number;
+    /** Filter out rows where primary_topic IS NULL. */
+    classifiedOnly?: boolean;
+  } = {},
 ): Promise<ArticleWithSource[]> {
   const limit = opts.limit ?? 200;
   const sinceHours = opts.sinceHours ?? 24;
@@ -101,14 +106,16 @@ export async function listLatestArticles(
     Date.now() - sinceHours * 3600 * 1000,
   ).toISOString();
 
-  const { data, error } = await client
+  let q = client
     .from("articles")
     .select(ARTICLE_FIELDS)
     .gte("published_at", sinceIso)
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("fetched_at", { ascending: false })
     .limit(limit);
+  if (opts.classifiedOnly) q = q.not("primary_topic", "is", null);
 
+  const { data, error } = await q;
   if (error) throw error;
   return (data ?? []) as unknown as ArticleWithSource[];
 }

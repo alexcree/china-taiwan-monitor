@@ -1,13 +1,12 @@
 import { getHome } from "@/lib/home";
 import { getLatestMarkets } from "@/lib/markets";
 import { MarketTicker } from "@/components/market-ticker";
-import { TopicCard } from "@/components/topic-card";
+import { ArticleTile } from "@/components/article-tile";
+import { SourceLatestSection } from "@/components/source-latest-section";
 import { SectionLabel } from "@/components/brief/section-label";
 import { SubscribeInline } from "@/components/subscribe-inline";
 import { TopLead } from "@/components/top-lead";
-import { PRIMARY_TOPIC_ORDER } from "@ctm/brief-schema";
 
-// Match /feed cadence — close to the 15-min ingestion pass.
 export const revalidate = 60;
 
 export default async function HomePage() {
@@ -15,20 +14,6 @@ export default async function HomePage() {
     getHome(),
     getLatestMarkets(),
   ]);
-
-  // Walk the canonical primary_topic order, dropping empty buckets, then
-  // append any non-enum topics that happen to be present (shouldn't happen
-  // with the check constraint, but harmless).
-  const orderedTopics = [
-    ...PRIMARY_TOPIC_ORDER.filter(
-      (t) => (home.buckets.get(t)?.length ?? 0) > 0,
-    ),
-    ...Array.from(home.buckets.keys()).filter(
-      (t) =>
-        !PRIMARY_TOPIC_ORDER.includes(t as (typeof PRIMARY_TOPIC_ORDER)[number]) &&
-        (home.buckets.get(t)?.length ?? 0) > 0,
-    ),
-  ];
 
   const lead = home.leads[0];
   const secondaries = home.leads.slice(1, 4);
@@ -49,25 +34,30 @@ export default async function HomePage() {
             <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-[color:var(--color-accent)] font-bold mr-2">
               Seed mode
             </span>
-            Supabase is not configured. Once the ingestion worker has classified
-            articles, this page will render live coverage grouped by topic.
+            Supabase is not configured. The live page renders headlines from
+            the worker once articles are ingested and classified.
           </div>
         )}
 
         <SectionLabel
-          subtitle={`${home.totalArticles} headlines · last 24h · ${orderedTopics.length} topics`}
+          subtitle={`${home.tiles.length} headlines · last 24h · ranked by cross-source coverage`}
         >
           Headlines
         </SectionLabel>
 
-        <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-5">
-          {orderedTopics.map((topic) => {
-            const items = home.buckets.get(topic) ?? [];
-            return <TopicCard key={topic} topic={topic} articles={items} />;
-          })}
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-5">
+          {home.tiles.map((t) => (
+            <ArticleTile
+              key={t.article.id}
+              article={t.article}
+              cluster_size={t.cluster_size}
+            />
+          ))}
         </div>
 
         <SubscribeInline />
+
+        <SourceLatestSection groups={home.bySource} />
       </div>
     </>
   );

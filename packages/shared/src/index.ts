@@ -1,4 +1,9 @@
 export { isChinaTaiwanRelevant, type RelevanceInput } from "./relevance.js";
+export {
+  clusterArticles,
+  type ClusterInput,
+  type ClusterAssignment,
+} from "./clustering.js";
 
 export function formatBriefDate(isoDate: string): string {
   const [y, m, d] = isoDate.split("-").map(Number);
