@@ -16,13 +16,6 @@ const NAV = [
 ];
 
 export function SiteHeader() {
-  const today = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
   return (
     <header className="bg-[color:var(--color-surface)] rule-bottom">
       {/* Masthead */}
@@ -40,8 +33,8 @@ export function SiteHeader() {
             China–Taiwan Monitor
           </span>
         </Link>
-        <span className="text-xs text-[color:var(--color-fg-dim)] font-mono ml-auto">
-          {today}
+        <span className="text-xs text-[color:var(--color-fg-muted)] italic ml-auto">
+          Daily intelligence on China–Taiwan developments
         </span>
       </div>
 
