@@ -76,7 +76,11 @@ export async function getHome(): Promise<HomeState> {
       ),
       weight: a.published_at ? Date.parse(a.published_at) : 0,
     }));
-    const clusters = clusterArticles(inputs, { threshold: 0.45 });
+    // 0.30 hits the sweet spot on our summaries: ~30 multi-source clusters
+    // with reasonable top sizes (6-7 outlets on a hot story) and minimal
+    // false merges. Threshold probed via packages/worker-ingestion/src/
+    // scripts/probe-clusters.ts.
+    const clusters = clusterArticles(inputs, { threshold: 0.3 });
     const sizeOf = (id: string) => clusters.sizeOf.get(id) ?? 1;
 
     // ─── Top Lead: 4 articles by cluster size, deduped by source ──
