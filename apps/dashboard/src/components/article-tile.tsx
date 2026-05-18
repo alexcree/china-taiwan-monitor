@@ -63,24 +63,10 @@ function TopicPill({ topic }: { topic: string }) {
   );
 }
 
-function ClusterBadge({ size }: { size: number }) {
-  if (size <= 1) return null;
-  return (
-    <span
-      title={`Same story covered by ${size} outlets`}
-      className="inline-flex items-center font-mono text-[10px] tracking-wider px-1.5 py-0.5 bg-[color:var(--color-fg)] text-[color:var(--color-bg)]"
-    >
-      ×{size}
-    </span>
-  );
-}
-
 export function ArticleTile({
   article: a,
-  cluster_size,
 }: {
   article: ArticleWithSource;
-  cluster_size: number;
 }) {
   const isZh = a.lang !== "en";
   const sourceLabel =
@@ -94,10 +80,11 @@ export function ArticleTile({
 
   return (
     <article className="bg-[color:var(--color-surface)] border border-[color:var(--color-border)] px-3 py-3 break-inside-avoid mb-5">
-      <div className="flex items-center gap-1.5 flex-wrap mb-2">
-        {a.primary_topic && <TopicPill topic={a.primary_topic} />}
-        <ClusterBadge size={cluster_size} />
-      </div>
+      {a.primary_topic && (
+        <div className="flex items-center gap-1.5 flex-wrap mb-2">
+          <TopicPill topic={a.primary_topic} />
+        </div>
+      )}
 
       <a
         href={a.url}

@@ -43,12 +43,6 @@ export function SiteHeader() {
         <span className="text-xs text-[color:var(--color-fg-dim)] font-mono ml-auto">
           {today}
         </span>
-        <Link
-          href="/subscribe"
-          className="font-mono text-xs tracking-wider px-3 py-1.5 bg-[color:var(--color-accent)] text-white hover:bg-[color:var(--color-accent-2)] transition-colors"
-        >
-          SUBSCRIBE
-        </Link>
       </div>
 
       {/* Nav strip */}

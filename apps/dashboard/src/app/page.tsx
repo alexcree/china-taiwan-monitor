@@ -4,7 +4,6 @@ import { MarketTicker } from "@/components/market-ticker";
 import { ArticleTile } from "@/components/article-tile";
 import { SourceLatestSection } from "@/components/source-latest-section";
 import { SectionLabel } from "@/components/brief/section-label";
-import { SubscribeInline } from "@/components/subscribe-inline";
 import { TopLead } from "@/components/top-lead";
 
 export const revalidate = 60;
@@ -47,15 +46,9 @@ export default async function HomePage() {
 
         <div className="columns-1 sm:columns-2 lg:columns-3 gap-5">
           {home.tiles.map((t) => (
-            <ArticleTile
-              key={t.article.id}
-              article={t.article}
-              cluster_size={t.cluster_size}
-            />
+            <ArticleTile key={t.article.id} article={t.article} />
           ))}
         </div>
-
-        <SubscribeInline />
 
         <SourceLatestSection groups={home.bySource} />
       </div>

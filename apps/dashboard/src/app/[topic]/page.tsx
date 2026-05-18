@@ -11,7 +11,6 @@ import { domainOf, isPaywalled } from "@ctm/shared";
 import { topicFromPath, getTopicData } from "@/lib/topic";
 import { SectionLabel } from "@/components/brief/section-label";
 import { LocalTime } from "@/components/local-time";
-import { SubscribeInline } from "@/components/subscribe-inline";
 
 export const revalidate = 60;
 
@@ -151,8 +150,6 @@ export default async function TopicPage({
           );
         })}
       </ul>
-
-      <SubscribeInline />
     </div>
   );
 }
