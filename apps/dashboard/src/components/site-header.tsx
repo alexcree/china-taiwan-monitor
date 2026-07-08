@@ -3,13 +3,6 @@ import Link from "next/link";
 
 const NAV = [
   { href: "/", label: "Top Brief" },
-  { href: "/military", label: "Military" },
-  { href: "/politics", label: "Politics" },
-  { href: "/us-china-taiwan", label: "U.S.–China–Taiwan" },
-  { href: "/semiconductors", label: "Semiconductors" },
-  { href: "/markets", label: "Markets" },
-  { href: "/cyber-info-ops", label: "Cyber & Info Ops" },
-  { href: "/diplomacy", label: "Diplomacy" },
   { href: "/feed", label: "Live feed" },
   { href: "/sources", label: "Sources" },
   { href: "/about", label: "About" },

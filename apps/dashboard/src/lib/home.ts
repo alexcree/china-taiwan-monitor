@@ -53,11 +53,13 @@ export async function getHome(): Promise<HomeState> {
 
   try {
     const [recentClassified, weekArticles, sources] = await Promise.all([
-      // Classified 24h articles for the headline composition.
+      // 24h articles for the headline composition. `classifiedOnly` used
+      // to be true — dropped now that the summarizer/classifier is disabled
+      // for cost reasons. Unclassified articles fall into the "general"
+      // bucket and simply render without a topic pill.
       listLatestArticles(client, {
         sinceHours: HOME_WINDOW_HOURS,
         limit: 1000,
-        classifiedOnly: true,
       }),
       // 7-day pull for the per-source section (no classification required —
       // we want the source's latest regardless).
