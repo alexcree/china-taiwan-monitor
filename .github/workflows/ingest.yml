@@ -1,10 +1,13 @@
 name: Ingest articles (RSS pollers)
 
 on:
-  # Every 15 minutes. GitHub Actions schedules are best-effort and can run
-  # 5-15 minutes late under load — that's acceptable for Phase 2.
+  # Hourly. GitHub throttles scheduled workflows on public/free-tier repos to
+  # roughly this cadence anyway, so a tighter cron just piles up pending runs
+  # that the `ingest` concurrency group cancels (producing spurious "All jobs
+  # were cancelled" failure emails). Ingestion is idempotent, so hourly is
+  # plenty. Use the workflow_dispatch trigger below for ad-hoc catch-up runs.
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "0 * * * *"
 
   # Manual trigger for ad-hoc runs from the Actions tab.
   workflow_dispatch: {}
